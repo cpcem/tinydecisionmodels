@@ -247,3 +247,51 @@ fn many_option_distributions_tolerate_per_option_rounding() {
     let two = std::collections::BTreeMap::from([("a".to_owned(), 0.6), ("b".to_owned(), 0.39)]);
     assert!(validate_distribution(&two, "choice").is_err());
 }
+
+#[test]
+fn typesafe_latest_accepts_only_concrete_jev_releases() {
+    response().validate_for_typesafe(&request()).unwrap();
+    let mut resolved = response();
+    resolved.model = "jev-1.13.0".into();
+    resolved.validate_for_typesafe(&request()).unwrap();
+    assert!(resolved.validate_for(&request()).is_err());
+
+    for model in [
+        "",
+        "jev-",
+        "jev-other",
+        "jev-1.13",
+        "jev-1.13.0.1",
+        "jev-1.13.0-beta",
+        "jev-01.13.0",
+        "jev-1..0",
+        "jev-1.x.0",
+        "typesafe/jev-1.13.0",
+        "other-1.13.0",
+        "jev-1.13.0 ",
+    ] {
+        resolved.model = model.into();
+        assert!(
+            resolved.validate_for_typesafe(&request()).is_err(),
+            "{model}"
+        );
+    }
+
+    let mut pinned = request();
+    pinned.model = "jev-1.13.0".into();
+    resolved.model = "jev-1.13.0".into();
+    resolved.validate_for_typesafe(&pinned).unwrap();
+    resolved.model = "jev-1.14.0".into();
+    assert!(resolved.validate_for_typesafe(&pinned).is_err());
+
+    resolved.model = "jev-1.13.0".into();
+    resolved.answers.remove("safe");
+    assert!(resolved.validate_for_typesafe(&request()).is_err());
+    let mut invalid = response();
+    invalid.model = "jev-1.13.0".into();
+    let Answer::Choice(choice) = invalid.answers.get_mut("route").unwrap() else {
+        panic!("fixture answer should be a choice")
+    };
+    choice.probabilities.insert("unexpected".into(), 0.0);
+    assert!(invalid.validate_for_typesafe(&request()).is_err());
+}

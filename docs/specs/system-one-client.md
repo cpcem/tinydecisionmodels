@@ -35,8 +35,9 @@ classified `Error`, attempt count, and elapsed time.
 Response validation requires:
 
 - exact question ids and primitive types;
-- the exact requested model id for `TypeSafe`, or OpenRouter's resolved
-  `typesafe/` Jev release matching the requested Jev alias;
+- the exact requested model id for `TypeSafe`, or a concrete
+  `jev-MAJOR.MINOR.PATCH` release for its `jev-latest` alias; OpenRouter accepts
+  its resolved `typesafe/` Jev release matching the requested Jev alias;
 - finite probabilities in `[0, 1]`, with each distribution sum differing from
   `1.0` by at most `0.000001`;
 - Choice labels exactly matching criteria and the chosen label tying for the

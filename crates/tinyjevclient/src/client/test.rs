@@ -458,3 +458,18 @@ async fn redirect_is_not_followed() {
     assert!(matches!(failure.error, Error::HttpStatus { status: 307 }));
     assert_eq!(requests.lock().await.len(), 1);
 }
+
+#[tokio::test]
+async fn typesafe_latest_accepts_the_resolved_release_over_http() {
+    let (base_url, requests) = server(vec![response(
+        200,
+        &success().replace("jev-latest", "jev-1.13.0"),
+        "",
+    )])
+    .await;
+    let client = Client::new(config(base_url)).unwrap();
+    let result = client.evaluate(&request()).await.unwrap();
+    assert_eq!(result.response.model, "jev-1.13.0");
+    assert_eq!(result.attempts, 1);
+    assert!(requests.lock().await[0].contains("\"model\":\"jev-latest\""));
+}

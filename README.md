@@ -44,6 +44,10 @@ real API call:
 TYPESAFE_API_KEY='<key>' cargo run -p tinyjevclient --example basic
 ```
 
+Direct TypeSafe calls may resolve `jev-latest` to a concrete release such as
+`jev-1.13.0`. The client accepts that resolution while preserving all answer
+validation. Explicit model requests still require an exact match.
+
 ## OpenRouter
 
 OpenRouter supports the same System One request and response format for Jev.
