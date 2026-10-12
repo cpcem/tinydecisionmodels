@@ -25,6 +25,22 @@ impl EvaluationResponse {
         self.validate_for_model(request, |response_model| response_model == request.model)
     }
 
+    /// Check a direct `TypeSafe` response, allowing its latest-model alias.
+    ///
+    /// A `jev-latest` request can resolve to a concrete `jev-MAJOR.MINOR.PATCH`
+    /// release. Other requested model identifiers still require an exact match.
+    /// Answer ids, types, labels and probability checks are unchanged.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`Error::InvalidResponse`] for a model mismatch or an inconsistent
+    /// answer payload.
+    pub fn validate_for_typesafe(&self, request: &EvaluationRequest) -> Result<()> {
+        self.validate_for_model(request, |model| {
+            model == request.model || (request.model == "jev-latest" && is_typesafe_release(model))
+        })
+    }
+
     /// Check an `OpenRouter` System One response against its request.
     ///
     /// `OpenRouter` resolves bare Jev model IDs into the `typesafe/` namespace,
@@ -80,6 +96,19 @@ impl EvaluationResponse {
         }
         Ok(())
     }
+}
+
+fn is_typesafe_release(model: &str) -> bool {
+    let Some(version) = model.strip_prefix("jev-") else {
+        return false;
+    };
+    let parts: Vec<_> = version.split('.').collect();
+    parts.len() == 3
+        && parts.iter().all(|part| {
+            !part.is_empty()
+                && part.bytes().all(|byte| byte.is_ascii_digit())
+                && (part.len() == 1 || !part.starts_with('0'))
+        })
 }
 
 fn validate_pair(question: &Question, answer: &Answer) -> Result<()> {
